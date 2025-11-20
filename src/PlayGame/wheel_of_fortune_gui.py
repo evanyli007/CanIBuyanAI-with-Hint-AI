@@ -25,7 +25,7 @@ class WheelOfFortuneGUI:
     def __init__(self):
         self.root = tk.Tk()
         self.root.title("Wheel of Fortune - AI Enhanced Edition")
-        self.root.geometry("1200x800")
+        self.root.geometry("1400x900")
         self.root.configure(bg="#1e3a8a")  # Deep blue background
         
         # Game state
@@ -42,6 +42,13 @@ class WheelOfFortuneGUI:
         self.hint_ai = None
         self.game_thread = None
         self.wheel_spinning = False
+        
+        # Animation state
+        self.wheel_rotation = 0
+        self.wheel_velocity = 0
+        self.animation_id = None
+        self.letter_tiles = {}
+        self.score_animations = {}
         
         # Wheel configuration
         self.wheel_values = [0, -1, 500, 550, 600, 650, 700, 750, 800, 850, 900, -1, 
@@ -163,8 +170,8 @@ class WheelOfFortuneGUI:
                 fg="#fbbf24", bg="#1e3a8a").pack()
         
         # Wheel canvas
-        self.wheel_canvas = tk.Canvas(wheel_frame, width=300, height=300, 
-                                     bg="#374151", highlightthickness=2,
+        self.wheel_canvas = tk.Canvas(wheel_frame, width=350, height=350, 
+                                     bg="#1a1a2e", highlightthickness=3,
                                      highlightbackground="#fbbf24")
         self.wheel_canvas.pack(pady=10)
         
@@ -280,66 +287,148 @@ class WheelOfFortuneGUI:
         # Draw initial wheel
         self.draw_wheel()
     
-    def draw_wheel(self, highlight_segment: Optional[int] = None):
-        """Draw the spinning wheel."""
+    def draw_wheel(self, rotation_offset: float = 0):
+        """Draw the spinning wheel with realistic 3D effects and smooth rotation."""
         self.wheel_canvas.delete("all")
         
-        center_x, center_y = 150, 150
-        radius = 140
+        center_x, center_y = 175, 175
+        outer_radius = 160
+        inner_radius = 30
         
         # Calculate segment angle
         segment_angle = 360 / len(self.wheel_values)
         
+        # Draw outer rim with 3D effect
+        self.wheel_canvas.create_oval(
+            center_x - outer_radius - 5, center_y - outer_radius - 5,
+            center_x + outer_radius + 5, center_y + outer_radius + 5,
+            fill="#2d3748", outline="#4a5568", width=3
+        )
+        
+        # Draw segments with rotation
         for i, (value, color) in enumerate(zip(self.wheel_values, self.wheel_colors)):
-            start_angle = i * segment_angle
+            start_angle = (i * segment_angle + rotation_offset) % 360
             
-            # Highlight spinning segment
-            if highlight_segment == i:
-                color = "#fbbf24"  # Gold highlight
+            # Create gradient effect by drawing multiple arcs
+            for j in range(3):
+                radius_offset = j * 5
+                current_radius = outer_radius - radius_offset
+                brightness = 1.0 - (j * 0.15)
+                
+                # Adjust color brightness
+                adjusted_color = self._adjust_color_brightness(color, brightness)
+                
+                # Draw segment
+                self.wheel_canvas.create_arc(
+                    center_x - current_radius, center_y - current_radius,
+                    center_x + current_radius, center_y + current_radius,
+                    start=start_angle, extent=segment_angle,
+                    fill=adjusted_color, outline="#1a202c", width=1
+                )
             
-            # Draw segment
-            self.wheel_canvas.create_arc(
-                center_x - radius, center_y - radius,
-                center_x + radius, center_y + radius,
-                start=start_angle, extent=segment_angle,
-                fill=color, outline="white", width=2
-            )
-            
-            # Add text
+            # Add text with rotation consideration
             text_angle = math.radians(start_angle + segment_angle/2)
-            text_x = center_x + (radius * 0.7) * math.cos(text_angle)
-            text_y = center_y + (radius * 0.7) * math.sin(text_angle)
+            text_radius = outer_radius * 0.75
+            text_x = center_x + text_radius * math.cos(text_angle)
+            text_y = center_y + text_radius * math.sin(text_angle)
             
             # Format text
             if value == -1:
                 text = "BANKRUPT"
-                text_color = "white"
+                text_color = "#ffffff"
+                font_size = 7
             elif value == 0:
                 text = "LOSE\nTURN"
-                text_color = "white"
+                text_color = "#ffffff"
+                font_size = 7
             else:
                 text = f"${value}"
-                text_color = "white"
+                text_color = "#ffffff"
+                font_size = 9
             
-            self.wheel_canvas.create_text(text_x, text_y, text=text, 
-                                        fill=text_color, font=("Arial", 8, "bold"))
+            self.wheel_canvas.create_text(
+                text_x, text_y, text=text, fill=text_color,
+                font=("Arial", font_size, "bold"), justify=tk.CENTER
+            )
         
-        # Draw center circle and pointer
-        self.wheel_canvas.create_oval(center_x-10, center_y-10, 
-                                    center_x+10, center_y+10, 
-                                    fill="#fbbf24", outline="white", width=2)
+        # Draw inner hub with metallic effect
+        for i in range(5):
+            hub_radius = inner_radius - i * 3
+            brightness = 1.0 - (i * 0.1)
+            hub_color = self._adjust_color_brightness("#fbbf24", brightness)
+            
+            self.wheel_canvas.create_oval(
+                center_x - hub_radius, center_y - hub_radius,
+                center_x + hub_radius, center_y + hub_radius,
+                fill=hub_color, outline="#d69e2e", width=1
+            )
         
-        # Draw pointer at top
-        self.wheel_canvas.create_polygon(center_x, center_y-radius-10,
-                                       center_x-10, center_y-radius+10,
-                                       center_x+10, center_y-radius+10,
-                                       fill="#dc2626", outline="white", width=2)
+        # Draw center logo
+        self.wheel_canvas.create_text(
+            center_x, center_y, text="WOF", fill="#1a202c",
+            font=("Arial", 12, "bold")
+        )
+        
+        # Draw pointer with 3D effect
+        pointer_points = [
+            center_x, center_y - outer_radius - 15,
+            center_x - 12, center_y - outer_radius + 8,
+            center_x - 6, center_y - outer_radius + 5,
+            center_x + 6, center_y - outer_radius + 5,
+            center_x + 12, center_y - outer_radius + 8
+        ]
+        
+        # Shadow
+        shadow_points = [p + 2 if i % 2 == 0 else p + 2 for i, p in enumerate(pointer_points)]
+        self.wheel_canvas.create_polygon(shadow_points, fill="#1a202c", outline="")
+        
+        # Main pointer
+        self.wheel_canvas.create_polygon(pointer_points, fill="#dc2626", outline="#991b1b", width=2)
+        
+        # Pointer highlight
+        highlight_points = [
+            center_x - 2, center_y - outer_radius - 12,
+            center_x - 8, center_y - outer_radius + 5,
+            center_x - 4, center_y - outer_radius + 3,
+            center_x + 4, center_y - outer_radius + 3,
+            center_x + 8, center_y - outer_radius + 5
+        ]
+        self.wheel_canvas.create_polygon(highlight_points, fill="#f56565", outline="")
     
-    def update_puzzle_display(self):
-        """Update the puzzle display with current state."""
+    def _adjust_color_brightness(self, hex_color: str, brightness: float) -> str:
+        """Adjust the brightness of a hex color."""
+        # Remove # if present
+        hex_color = hex_color.lstrip('#')
+        
+        # Convert to RGB
+        r = int(hex_color[0:2], 16)
+        g = int(hex_color[2:4], 16)
+        b = int(hex_color[4:6], 16)
+        
+        # Adjust brightness
+        r = int(r * brightness)
+        g = int(g * brightness)
+        b = int(b * brightness)
+        
+        # Clamp values
+        r = max(0, min(255, r))
+        g = max(0, min(255, g))
+        b = max(0, min(255, b))
+        
+        # Convert back to hex
+        return f"#{r:02x}{g:02x}{b:02x}"
+    
+    def update_puzzle_display(self, animate_new_letters: bool = False):
+        """Update the puzzle display with current state and animations."""
+        # Store previous state for animation comparison
+        previous_showing = getattr(self, '_previous_showing', "")
+        self._previous_showing = self.showing
+        
         # Clear existing puzzle display
         for widget in self.puzzle_frame.winfo_children():
             widget.destroy()
+        
+        self.letter_tiles = {}  # Reset tile tracking
         
         if not self.showing:
             return
@@ -348,42 +437,156 @@ class WheelOfFortuneGUI:
         
         for word_idx, word in enumerate(words):
             word_frame = tk.Frame(self.puzzle_frame, bg="#1e3a8a")
-            word_frame.pack(pady=5)
+            word_frame.pack(pady=8)
             
             for char_idx, char in enumerate(word):
+                tile_id = f"{word_idx}_{char_idx}"
+                
                 if char == "_":
-                    # Empty letter box
-                    letter_frame = tk.Frame(word_frame, bg="white", 
-                                          relief=tk.RAISED, bd=2,
-                                          width=40, height=40)
-                    letter_frame.pack(side=tk.LEFT, padx=2)
-                    letter_frame.pack_propagate(False)
-                else:
-                    # Revealed letter
-                    letter_frame = tk.Frame(word_frame, bg="#10b981", 
-                                          relief=tk.RAISED, bd=2,
-                                          width=40, height=40)
-                    letter_frame.pack(side=tk.LEFT, padx=2)
+                    # Empty letter box with 3D effect
+                    letter_frame = tk.Frame(word_frame, bg="#f8fafc", 
+                                          relief=tk.RAISED, bd=3,
+                                          width=50, height=50)
+                    letter_frame.pack(side=tk.LEFT, padx=3, pady=2)
                     letter_frame.pack_propagate(False)
                     
-                    letter_label = tk.Label(letter_frame, text=char, 
-                                          font=("Arial", 18, "bold"),
+                    # Add inner shadow effect
+                    inner_frame = tk.Frame(letter_frame, bg="#e2e8f0", 
+                                         relief=tk.SUNKEN, bd=1)
+                    inner_frame.pack(fill=tk.BOTH, expand=True, padx=2, pady=2)
+                    
+                    self.letter_tiles[tile_id] = {
+                        'frame': letter_frame,
+                        'inner': inner_frame,
+                        'label': None,
+                        'char': char
+                    }
+                else:
+                    # Check if this is a newly revealed letter
+                    is_new_letter = (animate_new_letters and 
+                                   previous_showing and 
+                                   word_idx < len(previous_showing.split(" ")) and
+                                   char_idx < len(previous_showing.split(" ")[word_idx]) and
+                                   previous_showing.split(" ")[word_idx][char_idx] == "_")
+                    
+                    # Revealed letter with enhanced styling
+                    letter_frame = tk.Frame(word_frame, bg="#059669", 
+                                          relief=tk.RAISED, bd=3,
+                                          width=50, height=50)
+                    letter_frame.pack(side=tk.LEFT, padx=3, pady=2)
+                    letter_frame.pack_propagate(False)
+                    
+                    # Inner frame for depth
+                    inner_frame = tk.Frame(letter_frame, bg="#10b981", 
+                                         relief=tk.FLAT, bd=0)
+                    inner_frame.pack(fill=tk.BOTH, expand=True, padx=2, pady=2)
+                    
+                    letter_label = tk.Label(inner_frame, text=char, 
+                                          font=("Arial", 20, "bold"),
                                           fg="white", bg="#10b981")
                     letter_label.pack(expand=True)
+                    
+                    self.letter_tiles[tile_id] = {
+                        'frame': letter_frame,
+                        'inner': inner_frame,
+                        'label': letter_label,
+                        'char': char
+                    }
+                    
+                    # Animate new letter reveal
+                    if is_new_letter:
+                        self._animate_letter_reveal(tile_id)
     
-    def update_player_display(self):
-        """Update player information display."""
-        for i, panel in enumerate(self.player_panels):
-            # Update score
-            panel['score'].config(text=f"Score: ${self.winnings[i]:,}")
+    def _animate_letter_reveal(self, tile_id: str):
+        """Animate the revealing of a new letter with flip effect."""
+        tile = self.letter_tiles.get(tile_id)
+        if not tile:
+            return
+        
+        # Start with the tile flipped (very narrow)
+        original_width = 50
+        
+        def flip_animation(step: int, direction: int):
+            if step <= 10:
+                # First half: shrink to reveal back
+                width = int(original_width * (1 - step / 10))
+                if width < 5:
+                    width = 5
+                
+                tile['frame'].config(width=width)
+                
+                # Change color halfway through
+                if step == 5:
+                    tile['frame'].config(bg="#fbbf24")  # Gold flash
+                    tile['inner'].config(bg="#f59e0b")
+                
+                self.root.after(30, lambda: flip_animation(step + 1, direction))
             
-            # Update turn indicator
+            elif step <= 20:
+                # Second half: expand to show letter
+                width = int(original_width * ((step - 10) / 10))
+                tile['frame'].config(width=width)
+                
+                # Restore final colors
+                if step == 15:
+                    tile['frame'].config(bg="#059669")
+                    tile['inner'].config(bg="#10b981")
+                
+                self.root.after(30, lambda: flip_animation(step + 1, direction))
+            else:
+                # Animation complete - ensure final state
+                tile['frame'].config(width=original_width)
+                
+                # Add a brief glow effect
+                self._add_letter_glow(tile_id)
+        
+        flip_animation(0, 1)
+    
+    def _add_letter_glow(self, tile_id: str):
+        """Add a brief glow effect to a revealed letter."""
+        tile = self.letter_tiles.get(tile_id)
+        if not tile:
+            return
+        
+        def glow_pulse(intensity: float, direction: int, pulses_left: int):
+            if pulses_left > 0:
+                # Calculate glow color
+                base_green = 16  # Base green value for #10b981
+                glow_green = int(base_green + (255 - base_green) * intensity)
+                glow_color = f"#{glow_green:02x}ff{glow_green:02x}"
+                
+                tile['inner'].config(bg=glow_color)
+                
+                # Update intensity
+                intensity += direction * 0.15
+                if intensity >= 1.0 or intensity <= 0.0:
+                    direction *= -1
+                    if intensity <= 0.0:
+                        pulses_left -= 1
+                
+                self.root.after(50, lambda: glow_pulse(intensity, direction, pulses_left))
+            else:
+                # Restore original color
+                tile['inner'].config(bg="#10b981")
+        
+        glow_pulse(0.0, 1, 2)  # 2 pulses
+    
+    def update_player_display(self, animate_score_change: Optional[int] = None):
+        """Update player information display with optional score animation."""
+        for i, panel in enumerate(self.player_panels):
+            # Update score with animation if specified
+            if animate_score_change is not None and i == animate_score_change:
+                self._animate_score_change(i, panel['score'])
+            else:
+                panel['score'].config(text=f"Score: ${self.winnings[i]:,}")
+            
+            # Update turn indicator with smooth transition
             if i == self.current_turn % 3 and self.is_game_active:
                 panel['turn'].config(text="👉 YOUR TURN", fg="#fbbf24")
-                panel['frame'].config(bg="#4f46e5")  # Highlight current player
+                self._animate_panel_highlight(panel['frame'], "#4f46e5")
             else:
                 panel['turn'].config(text="")
-                panel['frame'].config(bg="#374151")
+                self._animate_panel_highlight(panel['frame'], "#374151")
         
         # Update previous guesses
         if self.previous_guesses:
@@ -391,6 +594,57 @@ class WheelOfFortuneGUI:
             self.guesses_label.config(text=guesses_text)
         else:
             self.guesses_label.config(text="None")
+    
+    def _animate_score_change(self, player_index: int, score_label: tk.Label):
+        """Animate score change with counting effect."""
+        current_score = self.winnings[player_index]
+        previous_score = getattr(self, f'_prev_score_{player_index}', 0)
+        setattr(self, f'_prev_score_{player_index}', current_score)
+        
+        if current_score == previous_score:
+            score_label.config(text=f"Score: ${current_score:,}")
+            return
+        
+        # Calculate animation parameters
+        score_diff = current_score - previous_score
+        steps = min(20, abs(score_diff) // 50 + 5)  # More steps for larger changes
+        step_size = score_diff / steps
+        
+        def animate_step(step: int, display_score: float):
+            if step <= steps:
+                # Update displayed score
+                display_value = int(previous_score + (step * step_size))
+                score_label.config(text=f"Score: ${display_value:,}")
+                
+                # Add color effects for positive/negative changes
+                if score_diff > 0:
+                    # Green flash for positive
+                    intensity = math.sin(step * 0.5) * 0.3
+                    green_value = int(16 + intensity * 100)  # Base green + flash
+                    color = f"#{green_value:02x}ff{green_value:02x}"
+                    score_label.config(fg=color)
+                elif score_diff < 0:
+                    # Red flash for negative (bankrupt)
+                    intensity = math.sin(step * 0.5) * 0.3
+                    red_value = int(220 + intensity * 35)
+                    color = f"#{red_value:02x}2626"
+                    score_label.config(fg=color)
+                
+                self.root.after(50, lambda: animate_step(step + 1, display_score + step_size))
+            else:
+                # Final state
+                score_label.config(text=f"Score: ${current_score:,}", fg="white")
+        
+        animate_step(0, previous_score)
+    
+    def _animate_panel_highlight(self, panel_frame: tk.Frame, target_color: str):
+        """Smoothly transition panel background color."""
+        current_color = panel_frame.cget('bg')
+        if current_color == target_color:
+            return
+        
+        # Simple color transition (could be enhanced with RGB interpolation)
+        panel_frame.config(bg=target_color)
     
     def update_human_controls(self):
         """Update human control button states."""
@@ -552,27 +806,108 @@ class WheelOfFortuneGUI:
         self.animate_wheel_spin()
     
     def animate_wheel_spin(self):
-        """Animate the wheel spinning."""
-        spin_duration = 2.0  # seconds
-        spin_steps = 20
-        step_delay = int(spin_duration * 1000 / spin_steps)
+        """Animate the wheel spinning with realistic physics."""
+        # Initialize spin parameters
+        self.wheel_rotation = 0
+        self.wheel_velocity = random.uniform(15, 25)  # Initial velocity (degrees per frame)
+        self.spin_friction = 0.98  # Friction coefficient
+        self.min_velocity = 0.5  # Minimum velocity before stopping
         
-        def spin_step(step):
-            if step < spin_steps:
-                # Highlight random segment during spin
-                highlight = random.randint(0, len(self.wheel_values) - 1)
-                self.draw_wheel(highlight)
-                self.root.after(step_delay, lambda: spin_step(step + 1))
-            else:
-                # Final result
-                result_value = random.choice(self.wheel_values)
-                result_index = self.wheel_values.index(result_value)
-                self.draw_wheel(result_index)
+        # Start the animation
+        self._wheel_spin_frame()
+    
+    def _wheel_spin_frame(self):
+        """Single frame of wheel spinning animation."""
+        if self.wheel_velocity > self.min_velocity:
+            # Update rotation
+            self.wheel_rotation += self.wheel_velocity
+            self.wheel_rotation %= 360
+            
+            # Apply friction
+            self.wheel_velocity *= self.spin_friction
+            
+            # Add some randomness for realistic wobble
+            if self.wheel_velocity > 5:
+                wobble = random.uniform(-0.2, 0.2)
+                self.wheel_velocity += wobble
+            
+            # Draw wheel at current rotation
+            self.draw_wheel(self.wheel_rotation)
+            
+            # Schedule next frame (60 FPS)
+            self.animation_id = self.root.after(16, self._wheel_spin_frame)
+        else:
+            # Wheel has stopped - determine final result
+            self._finish_wheel_spin()
+    
+    def _finish_wheel_spin(self):
+        """Finish the wheel spin and determine the result."""
+        # Calculate which segment the pointer is on
+        segment_angle = 360 / len(self.wheel_values)
+        
+        # The pointer is at the top (0 degrees), so we need to find which segment
+        # is currently at the top position considering the wheel rotation
+        pointer_angle = (360 - self.wheel_rotation) % 360
+        segment_index = int(pointer_angle / segment_angle) % len(self.wheel_values)
+        
+        result_value = self.wheel_values[segment_index]
+        
+        # Add a final settling animation
+        self._settle_wheel(segment_index, result_value)
+    
+    def _settle_wheel(self, segment_index: int, result_value: int, settle_steps: int = 10):
+        """Animate the wheel settling on the final result."""
+        if settle_steps > 0:
+            # Small oscillation as wheel settles
+            oscillation = math.sin(settle_steps * 0.5) * (settle_steps * 0.3)
+            self.draw_wheel(self.wheel_rotation + oscillation)
+            
+            self.root.after(50, lambda: self._settle_wheel(segment_index, result_value, settle_steps - 1))
+        else:
+            # Final position
+            self.draw_wheel(self.wheel_rotation)
+            
+            # Add visual feedback for the winning segment
+            self._highlight_winning_segment(segment_index)
+            
+            # Process the result after a brief pause
+            self.root.after(500, lambda: self.process_spin_result(result_value))
+    
+    def _highlight_winning_segment(self, segment_index: int):
+        """Highlight the winning segment with a pulsing effect."""
+        def pulse(intensity: float, direction: int, pulses_left: int):
+            if pulses_left > 0:
+                # Create pulsing highlight effect
+                highlight_rotation = self.wheel_rotation
+                self.draw_wheel(highlight_rotation)
                 
-                # Process spin result
-                self.process_spin_result(result_value)
+                # Draw highlight overlay on winning segment
+                center_x, center_y = 175, 175
+                outer_radius = 160
+                segment_angle = 360 / len(self.wheel_values)
+                start_angle = (segment_index * segment_angle + highlight_rotation) % 360
+                
+                # Pulsing highlight
+                alpha = int(intensity * 100)
+                highlight_color = f"#ffd700"  # Gold
+                
+                self.wheel_canvas.create_arc(
+                    center_x - outer_radius, center_y - outer_radius,
+                    center_x + outer_radius, center_y + outer_radius,
+                    start=start_angle, extent=segment_angle,
+                    fill="", outline=highlight_color, width=int(5 * intensity)
+                )
+                
+                # Update intensity
+                intensity += direction * 0.1
+                if intensity >= 1.0 or intensity <= 0.3:
+                    direction *= -1
+                    if intensity <= 0.3:
+                        pulses_left -= 1
+                
+                self.root.after(50, lambda: pulse(intensity, direction, pulses_left))
         
-        spin_step(0)
+        pulse(0.3, 1, 3)  # 3 pulses
     
     def process_spin_result(self, dollar_value):
         """Process the result of a wheel spin."""
@@ -638,7 +973,7 @@ class WheelOfFortuneGUI:
             if solution == self.puzzle:
                 self.update_status("CORRECT! You solved the puzzle!")
                 self.showing = self.puzzle
-                self.update_puzzle_display()
+                self.update_puzzle_display(animate_new_letters=True)
                 self.end_game(f"{self.player_names[self.current_turn % 3]} solved the puzzle!")
             else:
                 self.update_status("Incorrect solution. Next player's turn.")
@@ -708,9 +1043,9 @@ class WheelOfFortuneGUI:
             self.next_turn()
             return
         
-        # Update display
-        self.update_puzzle_display()
-        self.update_player_display()
+        # Update display with animations
+        self.update_puzzle_display(animate_new_letters=True)
+        self.update_player_display(animate_score_change=self.current_turn % 3)
         
         # Continue with same player if correct
         self.root.after(2000, self.game_loop)

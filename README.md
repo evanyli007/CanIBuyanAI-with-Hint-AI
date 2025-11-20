@@ -1,28 +1,38 @@
 # CanIBuyanAI with Hint AI
 This project tries to solve Wheel of Fortune puzzles and now includes an AI-powered hint system!
 
-## 🆕 New Feature: Hint AI
-The game now includes an intelligent hint system that provides New York Times-style crossword hints to help players solve puzzles. Features include:
-- **AI-powered hints** using large language models (OpenAI GPT)
+## 🆕 New Features: Enhanced GUI & Gemini AI Hints
+The game now includes major enhancements:
+
+### 🎡 Enhanced Wheel of Fortune GUI
+- **Realistic wheel spinning** with physics-based momentum and deceleration
+- **3D visual effects** with gradients, shadows, and metallic hub design
+- **Animated letter reveals** with flip effects and glowing highlights
+- **Score counting animations** with color-coded feedback
+- **Smooth transitions** and visual feedback for all game actions
+
+### 🤖 Google Gemini AI Hints
+- **AI-powered hints** using Google's Gemini AI (upgraded from ChatGPT)
 - **Three difficulty levels**: Easy, Medium, and Hard
 - **Fallback system** with rule-based hints when API unavailable
 - **Limited hints per game** (3 hints) for balanced gameplay
 
-### 🚀 Quick Setup for AI Hints
-1. **Interactive Setup** (Recommended):
+### 🚀 Quick Setup for Gemini AI Hints
+1. **Get API Key**:
+   - Visit: https://makersuite.google.com/app/apikey
+   - Create a new API key for Gemini
+
+2. **Set Environment Variable**:
    ```bash
-   cd src/PlayGame
-   python setup_openai_api.py
+   export GEMINI_API_KEY="your-key-here"
+   # or alternatively:
+   export GOOGLE_API_KEY="your-key-here"
    ```
 
-2. **Manual Setup**:
-   - Get API key from: https://platform.openai.com/api-keys
-   - Set environment variable: `export OPENAI_API_KEY="your-key-here"`
-   - Test with: `python test_openai_api.py`
-
-3. **Compare Hint Types**:
+3. **Test Integration**:
    ```bash
-   python compare_hints.py  # See AI vs fallback hints side-by-side
+   cd src/PlayGame
+   python test_gemini_hints.py
    ```
 
 **Note**: Without an API key, the system automatically uses rule-based fallback hints.

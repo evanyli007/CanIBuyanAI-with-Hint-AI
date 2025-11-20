@@ -2,12 +2,13 @@
 
 ## Overview
 
-The Hint AI feature adds intelligent hint generation to the Wheel of Fortune game, providing players with New York Times-style crossword hints to help solve puzzles. The system uses large language models (LLMs) to generate contextual hints with three difficulty levels.
+The Hint AI feature adds intelligent hint generation to the Wheel of Fortune game, providing players with New York Times-style crossword hints to help solve puzzles. The system uses Google's Gemini AI to generate contextual hints with three difficulty levels.
 
 ## Features
 
 ### 🤖 AI-Powered Hints
-- Integrates with OpenAI's GPT models for intelligent hint generation
+- Integrates with Google Gemini AI for intelligent hint generation
+- Upgraded from ChatGPT to Gemini for improved performance
 - Fallback to rule-based hints when API is unavailable
 - Contextual hints based on puzzle category and current game state
 
@@ -53,11 +54,15 @@ Choose hint difficulty:
 
 ### Setting Up API Access
 
-To use AI-powered hints, set your OpenAI API key:
+To use AI-powered hints, set your Google Gemini API key:
 
 ```bash
-export OPENAI_API_KEY="your-api-key-here"
+export GEMINI_API_KEY="your-api-key-here"
+# or alternatively:
+export GOOGLE_API_KEY="your-api-key-here"
 ```
+
+Get your API key from: https://makersuite.google.com/app/apikey
 
 Or the system will automatically fall back to rule-based hints.
 
@@ -84,17 +89,22 @@ python play_random_puzzle.py human smart conservative
 
 ### API Integration
 
-The system uses OpenAI's Chat Completions API with carefully crafted prompts:
+The system uses Google Gemini's API with carefully crafted prompts:
 
 ```python
 # Example API call structure
 {
-    "model": "gpt-3.5-turbo",
-    "messages": [
-        {"role": "system", "content": "You are a professional crossword puzzle writer..."},
-        {"role": "user", "content": "Create a hint for: WHEEL OF FORTUNE..."}
+    "contents": [
+        {
+            "parts": [
+                {
+                    "text": "You are a professional crossword puzzle writer creating hints for a Wheel of Fortune game.\n\nCreate a hint for: WHEEL OF FORTUNE..."
+                }
+            ]
+        }
     ],
-    "max_tokens": 100,
+    "generationConfig": {
+        "maxOutputTokens": 100,
     "temperature": 0.7
 }
 ```
@@ -149,7 +159,7 @@ class HintAI:
 ## Dependencies
 
 - `requests>=2.25.0` for API calls
-- `openai` API key (optional, for AI hints)
+- Google Gemini API key (optional, for AI hints)
 
 Install dependencies:
 ```bash
@@ -180,9 +190,10 @@ The system gracefully handles:
 ## Future Enhancements
 
 Potential improvements:
-- Support for additional LLM providers (Anthropic, Google, etc.)
+- Support for additional LLM providers (Anthropic, OpenAI, etc.)
 - Hint difficulty based on player performance
 - Hint history and analytics
+- Multi-language hint support
 - Custom hint templates per category
 - Multiplayer hint sharing options
 

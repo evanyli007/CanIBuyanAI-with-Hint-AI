@@ -1,6 +1,6 @@
 """
 Hint AI module for Wheel of Fortune game.
-Provides crossword-style hints using large language models.
+Provides crossword-style hints using Google Gemini AI.
 """
 
 import os
@@ -10,19 +10,19 @@ from typing import Optional, Dict, Any
 
 
 class HintAI:
-    """AI-powered hint generator for Wheel of Fortune puzzles."""
+    """AI-powered hint generator for Wheel of Fortune puzzles using Google Gemini."""
     
-    def __init__(self, api_key: Optional[str] = None, model: str = "gpt-3.5-turbo"):
+    def __init__(self, api_key: Optional[str] = None, model: str = "gemini-1.5-flash"):
         """
-        Initialize the Hint AI.
+        Initialize the Hint AI with Google Gemini.
         
         Args:
-            api_key: OpenAI API key (if None, will try to get from environment)
-            model: OpenAI model to use for hint generation
+            api_key: Google Gemini API key (if None, will try to get from environment)
+            model: Gemini model to use for hint generation
         """
-        self.api_key = api_key or os.getenv('OPENAI_API_KEY')
+        self.api_key = api_key or os.getenv('GEMINI_API_KEY') or os.getenv('GOOGLE_API_KEY')
         self.model = model
-        self.base_url = "https://api.openai.com/v1/chat/completions"
+        self.base_url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
         
         # Track hint usage per game
         self.hints_used = 0
@@ -70,7 +70,7 @@ class HintAI:
             return self._generate_fallback_hint(puzzle, category, difficulty, current_state)
     
     def _call_llm(self, puzzle: str, category: str, difficulty: str, current_state: str) -> str:
-        """Call the LLM API to generate a hint."""
+        """Call the Google Gemini API to generate a hint."""
         
         # Create difficulty-specific prompts
         difficulty_instructions = {
@@ -114,36 +114,77 @@ class HintAI:
         Generate only the hint text, nothing else:
         """
         
+        # Gemini API format
         headers = {
-            "Authorization": f"Bearer {self.api_key}",
             "Content-Type": "application/json"
         }
         
         data = {
-            "model": self.model,
-            "messages": [
-                {"role": "system", "content": "You are a professional crossword puzzle writer creating hints for a Wheel of Fortune game."},
-                {"role": "user", "content": prompt}
+            "contents": [
+                {
+                    "parts": [
+                        {
+                            "text": f"You are a professional crossword puzzle writer creating hints for a Wheel of Fortune game.\n\n{prompt}"
+                        }
+                    ]
+                }
             ],
-            "max_tokens": 100,
-            "temperature": 0.7
+            "generationConfig": {
+                "temperature": 0.7,
+                "topK": 40,
+                "topP": 0.95,
+                "maxOutputTokens": 100,
+                "stopSequences": []
+            },
+            "safetySettings": [
+                {
+                    "category": "HARM_CATEGORY_HARASSMENT",
+                    "threshold": "BLOCK_MEDIUM_AND_ABOVE"
+                },
+                {
+                    "category": "HARM_CATEGORY_HATE_SPEECH",
+                    "threshold": "BLOCK_MEDIUM_AND_ABOVE"
+                },
+                {
+                    "category": "HARM_CATEGORY_SEXUALLY_EXPLICIT",
+                    "threshold": "BLOCK_MEDIUM_AND_ABOVE"
+                },
+                {
+                    "category": "HARM_CATEGORY_DANGEROUS_CONTENT",
+                    "threshold": "BLOCK_MEDIUM_AND_ABOVE"
+                }
+            ]
         }
+        
+        # Add API key to URL
+        url_with_key = f"{self.base_url}?key={self.api_key}"
         
         # Debug information
         if os.getenv("DEBUG_HINTS"):
-            print(f"🔍 DEBUG: Making API call to {self.base_url}")
+            print(f"🔍 DEBUG: Making API call to Gemini")
             print(f"🔍 DEBUG: Model: {self.model}")
             print(f"🔍 DEBUG: Puzzle: {puzzle}, Category: {category}, Difficulty: {difficulty}")
         
-        response = requests.post(self.base_url, headers=headers, json=data, timeout=30)
+        response = requests.post(url_with_key, headers=headers, json=data, timeout=30)
         
         if os.getenv("DEBUG_HINTS"):
             print(f"🔍 DEBUG: API Response Status: {response.status_code}")
+            if response.status_code != 200:
+                print(f"🔍 DEBUG: Response content: {response.text}")
         
         response.raise_for_status()
         
         result = response.json()
-        hint_text = result["choices"][0]["message"]["content"].strip()
+        
+        # Extract text from Gemini response format
+        if "candidates" in result and len(result["candidates"]) > 0:
+            candidate = result["candidates"][0]
+            if "content" in candidate and "parts" in candidate["content"]:
+                hint_text = candidate["content"]["parts"][0]["text"].strip()
+            else:
+                raise Exception("Unexpected response format from Gemini API")
+        else:
+            raise Exception("No candidates in Gemini API response")
         
         if os.getenv("DEBUG_HINTS"):
             print(f"🔍 DEBUG: Generated hint: {hint_text}")
