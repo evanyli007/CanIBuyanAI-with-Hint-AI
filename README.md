@@ -8,6 +8,25 @@ The game now includes an intelligent hint system that provides New York Times-st
 - **Fallback system** with rule-based hints when API unavailable
 - **Limited hints per game** (3 hints) for balanced gameplay
 
+### 🚀 Quick Setup for AI Hints
+1. **Interactive Setup** (Recommended):
+   ```bash
+   cd src/PlayGame
+   python setup_openai_api.py
+   ```
+
+2. **Manual Setup**:
+   - Get API key from: https://platform.openai.com/api-keys
+   - Set environment variable: `export OPENAI_API_KEY="your-key-here"`
+   - Test with: `python test_openai_api.py`
+
+3. **Compare Hint Types**:
+   ```bash
+   python compare_hints.py  # See AI vs fallback hints side-by-side
+   ```
+
+**Note**: Without an API key, the system automatically uses rule-based fallback hints.
+
 See [HINT_AI_README.md](./HINT_AI_README.md) for detailed documentation.
 
 ## Requirements

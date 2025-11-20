@@ -129,11 +129,26 @@ class HintAI:
             "temperature": 0.7
         }
         
+        # Debug information
+        if os.getenv("DEBUG_HINTS"):
+            print(f"🔍 DEBUG: Making API call to {self.base_url}")
+            print(f"🔍 DEBUG: Model: {self.model}")
+            print(f"🔍 DEBUG: Puzzle: {puzzle}, Category: {category}, Difficulty: {difficulty}")
+        
         response = requests.post(self.base_url, headers=headers, json=data, timeout=30)
+        
+        if os.getenv("DEBUG_HINTS"):
+            print(f"🔍 DEBUG: API Response Status: {response.status_code}")
+        
         response.raise_for_status()
         
         result = response.json()
-        return result["choices"][0]["message"]["content"].strip()
+        hint_text = result["choices"][0]["message"]["content"].strip()
+        
+        if os.getenv("DEBUG_HINTS"):
+            print(f"🔍 DEBUG: Generated hint: {hint_text}")
+        
+        return hint_text
     
     def _generate_fallback_hint(self, puzzle: str, category: str, difficulty: str, 
                                current_state: str) -> Dict[str, Any]:
