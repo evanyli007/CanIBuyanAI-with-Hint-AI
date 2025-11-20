@@ -1,0 +1,915 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎡 Wheel of Fortune - AI Enhanced Edition</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #1e3a8a, #3730a3);
+            color: white;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .title {
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: #fbbf24;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+            margin-bottom: 10px;
+        }
+
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 14px;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+        }
+
+        .btn-primary { background: #059669; color: white; }
+        .btn-secondary { background: #2563eb; color: white; }
+        .btn-warning { background: #f59e0b; color: white; }
+        .btn-danger { background: #dc2626; color: white; }
+        .btn-purple { background: #7c3aed; color: white; }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .game-area {
+            display: grid;
+            grid-template-columns: 1fr 2fr 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        .wheel-section {
+            background: #374151;
+            border-radius: 15px;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .wheel-title {
+            font-size: 1.5rem;
+            color: #fbbf24;
+            margin-bottom: 15px;
+        }
+
+        .wheel {
+            width: 250px;
+            height: 250px;
+            border: 5px solid #fbbf24;
+            border-radius: 50%;
+            margin: 0 auto 20px;
+            position: relative;
+            background: conic-gradient(
+                #dc2626 0deg 15deg,
+                #374151 15deg 30deg,
+                #059669 30deg 45deg,
+                #2563eb 45deg 60deg,
+                #7c3aed 60deg 75deg,
+                #dc2626 75deg 90deg,
+                #059669 90deg 105deg,
+                #2563eb 105deg 120deg,
+                #7c3aed 120deg 135deg,
+                #059669 135deg 150deg,
+                #2563eb 150deg 165deg,
+                #7c3aed 165deg 180deg,
+                #dc2626 180deg 195deg,
+                #374151 195deg 210deg,
+                #059669 210deg 225deg,
+                #2563eb 225deg 240deg,
+                #7c3aed 240deg 255deg,
+                #dc2626 255deg 270deg,
+                #059669 270deg 285deg,
+                #2563eb 285deg 300deg,
+                #7c3aed 300deg 315deg,
+                #059669 315deg 330deg,
+                #2563eb 330deg 345deg,
+                #7c3aed 345deg 360deg
+            );
+            animation: spin 0s linear;
+        }
+
+        .wheel::before {
+            content: '▼';
+            position: absolute;
+            top: -15px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 20px;
+            color: #fbbf24;
+        }
+
+        .wheel-result {
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #fbbf24;
+            margin-bottom: 15px;
+            min-height: 30px;
+        }
+
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(1440deg); }
+        }
+
+        .puzzle-section {
+            background: #374151;
+            border-radius: 15px;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .category {
+            font-size: 1.3rem;
+            color: #fbbf24;
+            margin-bottom: 20px;
+            font-weight: bold;
+        }
+
+        .puzzle-board {
+            background: #1f2937;
+            border-radius: 10px;
+            padding: 30px;
+            margin-bottom: 20px;
+            min-height: 200px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .puzzle-word {
+            display: flex;
+            gap: 8px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .letter-box {
+            width: 40px;
+            height: 40px;
+            border: 2px solid #6b7280;
+            border-radius: 5px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            font-weight: bold;
+            background: white;
+            color: #1f2937;
+        }
+
+        .letter-box.revealed {
+            background: #10b981;
+            color: white;
+            border-color: #10b981;
+        }
+
+        .guesses {
+            margin-top: 15px;
+        }
+
+        .guesses-title {
+            font-size: 1rem;
+            color: #94a3b8;
+            margin-bottom: 5px;
+        }
+
+        .guesses-list {
+            font-size: 1.1rem;
+            color: #e5e7eb;
+            letter-spacing: 2px;
+        }
+
+        .players-section {
+            background: #374151;
+            border-radius: 15px;
+            padding: 20px;
+        }
+
+        .players-title {
+            font-size: 1.5rem;
+            color: #fbbf24;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        .player {
+            background: #4b5563;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 10px;
+            border: 2px solid transparent;
+        }
+
+        .player.active {
+            border-color: #fbbf24;
+            background: #4f46e5;
+        }
+
+        .player-name {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .player-score {
+            color: #10b981;
+            font-size: 1.1rem;
+        }
+
+        .player-turn {
+            color: #fbbf24;
+            font-size: 0.9rem;
+            margin-top: 5px;
+        }
+
+        .human-controls {
+            background: #374151;
+            border-radius: 15px;
+            padding: 20px;
+            margin-top: 20px;
+            text-align: center;
+        }
+
+        .controls-title {
+            font-size: 1.3rem;
+            color: #fbbf24;
+            margin-bottom: 15px;
+        }
+
+        .control-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .status-bar {
+            background: #374151;
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+            font-size: 1.1rem;
+            margin-top: 20px;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+        }
+
+        .modal-content {
+            background: #1f2937;
+            margin: 15% auto;
+            padding: 30px;
+            border-radius: 15px;
+            width: 80%;
+            max-width: 500px;
+            text-align: center;
+            color: white;
+        }
+
+        .modal-title {
+            font-size: 1.5rem;
+            color: #fbbf24;
+            margin-bottom: 20px;
+        }
+
+        .letter-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 10px;
+            margin: 20px 0;
+        }
+
+        .letter-btn {
+            padding: 15px;
+            border: none;
+            border-radius: 8px;
+            background: #2563eb;
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .letter-btn:hover {
+            background: #1d4ed8;
+            transform: scale(1.05);
+        }
+
+        .input-group {
+            margin: 20px 0;
+        }
+
+        .input-group input {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #4b5563;
+            border-radius: 8px;
+            background: #374151;
+            color: white;
+            font-size: 1.1rem;
+        }
+
+        .input-group input:focus {
+            outline: none;
+            border-color: #fbbf24;
+        }
+
+        .hint-options {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin: 20px 0;
+        }
+
+        .hint-btn {
+            padding: 15px;
+            border: none;
+            border-radius: 8px;
+            background: #f59e0b;
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .hint-btn:hover {
+            background: #d97706;
+        }
+
+        @media (max-width: 768px) {
+            .game-area {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+            
+            .title {
+                font-size: 2rem;
+            }
+            
+            .wheel {
+                width: 200px;
+                height: 200px;
+            }
+            
+            .control-buttons {
+                flex-direction: column;
+                align-items: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1 class="title">🎡 WHEEL OF FORTUNE 🎡</h1>
+            <div class="controls">
+                <button class="btn btn-primary" onclick="newGame()">New Game</button>
+                <button class="btn btn-secondary" onclick="setupPlayers()">Setup Players</button>
+                <span id="hintStatus" style="color: #10b981;">🤖 Hint AI: Ready</span>
+            </div>
+        </div>
+
+        <div class="game-area">
+            <div class="wheel-section">
+                <h3 class="wheel-title">🎡 WHEEL</h3>
+                <div class="wheel" id="wheel"></div>
+                <div class="wheel-result" id="wheelResult"></div>
+                <button class="btn btn-danger" id="spinBtn" onclick="spinWheel()" disabled>🎯 SPIN WHEEL</button>
+            </div>
+
+            <div class="puzzle-section">
+                <div class="category" id="category">Category: Loading...</div>
+                <div class="puzzle-board" id="puzzleBoard">
+                    <div>Click "New Game" to start!</div>
+                </div>
+                <div class="guesses">
+                    <div class="guesses-title">Previous Guesses:</div>
+                    <div class="guesses-list" id="guessesList">None</div>
+                </div>
+            </div>
+
+            <div class="players-section">
+                <h3 class="players-title">👥 PLAYERS</h3>
+                <div id="playersContainer">
+                    <div class="player">
+                        <div class="player-name">Player 1: Human</div>
+                        <div class="player-score">Score: $0</div>
+                        <div class="player-turn"></div>
+                    </div>
+                    <div class="player">
+                        <div class="player-name">Player 2: Smart AI</div>
+                        <div class="player-score">Score: $0</div>
+                        <div class="player-turn"></div>
+                    </div>
+                    <div class="player">
+                        <div class="player-name">Player 3: Conservative AI</div>
+                        <div class="player-score">Score: $0</div>
+                        <div class="player-turn"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="human-controls">
+            <h3 class="controls-title">🎮 HUMAN CONTROLS</h3>
+            <div class="control-buttons">
+                <button class="btn btn-purple" id="buyVowelBtn" onclick="buyVowel()" disabled>💰 Buy Vowel ($250)</button>
+                <button class="btn btn-primary" id="solveBtn" onclick="solvePuzzle()" disabled>🎯 Solve Puzzle</button>
+                <button class="btn btn-warning" id="hintBtn" onclick="getHint()" disabled>💡 Get Hint</button>
+            </div>
+        </div>
+
+        <div class="status-bar" id="statusBar">Ready to play! Click 'New Game' to start.</div>
+    </div>
+
+    <!-- Modals -->
+    <div id="consonantModal" class="modal">
+        <div class="modal-content">
+            <h3 class="modal-title">Choose a Consonant</h3>
+            <div class="letter-grid" id="consonantGrid"></div>
+            <button class="btn btn-danger" onclick="closeModal('consonantModal')">Cancel</button>
+        </div>
+    </div>
+
+    <div id="vowelModal" class="modal">
+        <div class="modal-content">
+            <h3 class="modal-title">Buy a Vowel ($250)</h3>
+            <div class="letter-grid" id="vowelGrid"></div>
+            <button class="btn btn-danger" onclick="closeModal('vowelModal')">Cancel</button>
+        </div>
+    </div>
+
+    <div id="solveModal" class="modal">
+        <div class="modal-content">
+            <h3 class="modal-title">Solve the Puzzle</h3>
+            <div class="input-group">
+                <input type="text" id="solutionInput" placeholder="Enter your solution..." maxlength="50">
+            </div>
+            <button class="btn btn-primary" onclick="submitSolution()">Submit</button>
+            <button class="btn btn-danger" onclick="closeModal('solveModal')">Cancel</button>
+        </div>
+    </div>
+
+    <div id="hintModal" class="modal">
+        <div class="modal-content">
+            <h3 class="modal-title">Choose Hint Difficulty</h3>
+            <div class="hint-options">
+                <button class="hint-btn" onclick="requestHint('easy')">🟢 Easy - More direct guidance</button>
+                <button class="hint-btn" onclick="requestHint('medium')">🟡 Medium - Crossword-style clue</button>
+                <button class="hint-btn" onclick="requestHint('hard')">🔴 Hard - Cryptic wordplay</button>
+            </div>
+            <button class="btn btn-danger" onclick="closeModal('hintModal')">Cancel</button>
+        </div>
+    </div>
+
+    <script>
+        let gameState = {
+            puzzle: '',
+            clue: '',
+            showing: '',
+            previousGuesses: [],
+            currentTurn: 0,
+            winnings: [0, 0, 0],
+            playerTypes: ['human', 'smart', 'conservative'],
+            isActive: false,
+            hintsRemaining: 0,
+            wheelValue: 0
+        };
+
+        async function apiCall(endpoint, data = null) {
+            const options = {
+                method: data ? 'POST' : 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            };
+            
+            if (data) {
+                options.body = JSON.stringify(data);
+            }
+            
+            const response = await fetch(`/api/${endpoint}`, options);
+            return await response.json();
+        }
+
+        async function newGame() {
+            const result = await apiCall('new_game', {
+                player_types: gameState.playerTypes
+            });
+            
+            if (result.success) {
+                gameState.clue = result.clue;
+                gameState.showing = result.showing;
+                gameState.winnings = result.winnings;
+                gameState.currentTurn = result.current_turn;
+                gameState.previousGuesses = result.previous_guesses;
+                gameState.isActive = true;
+                gameState.hintsRemaining = result.hints_remaining;
+                
+                updateDisplay();
+                updateStatus('New game started! Category: ' + result.clue);
+                
+                // Start game loop
+                gameLoop();
+            }
+        }
+
+        async function gameLoop() {
+            if (!gameState.isActive) return;
+            
+            const currentPlayerType = gameState.playerTypes[gameState.currentTurn % 3];
+            
+            if (currentPlayerType === 'human') {
+                updateHumanControls();
+                updateStatus("Your turn! Choose an action.");
+            } else {
+                updateStatus(`${currentPlayerType.charAt(0).toUpperCase() + currentPlayerType.slice(1)} AI is thinking...`);
+                setTimeout(processAITurn, 1500);
+            }
+        }
+
+        async function processAITurn() {
+            const result = await apiCall('ai_turn', {});
+            
+            if (result.success) {
+                if (result.showing) gameState.showing = result.showing;
+                if (result.winnings) gameState.winnings = result.winnings;
+                if (result.previous_guesses) gameState.previousGuesses = result.previous_guesses;
+                gameState.currentTurn = result.current_turn;
+                
+                updateDisplay();
+                updateStatus(result.message);
+                
+                if (result.puzzle_solved) {
+                    endGame('Puzzle solved by AI!');
+                } else if (result.next_turn) {
+                    setTimeout(gameLoop, 2000);
+                } else {
+                    setTimeout(gameLoop, 2000);
+                }
+            }
+        }
+
+        async function spinWheel() {
+            document.getElementById('spinBtn').disabled = true;
+            updateStatus('Spinning the wheel...');
+            
+            // Animate wheel
+            const wheel = document.getElementById('wheel');
+            wheel.style.animation = 'spin 2s ease-out';
+            
+            setTimeout(async () => {
+                const result = await apiCall('spin_wheel', {});
+                
+                if (result.success) {
+                    gameState.wheelValue = result.value;
+                    document.getElementById('wheelResult').textContent = result.message;
+                    
+                    if (result.value === -1) {
+                        // Bankrupt
+                        gameState.winnings[gameState.currentTurn % 3] = 0;
+                        gameState.currentTurn++;
+                        updateDisplay();
+                        setTimeout(gameLoop, 2000);
+                    } else if (result.value === 0) {
+                        // Lose turn
+                        gameState.currentTurn++;
+                        updateDisplay();
+                        setTimeout(gameLoop, 2000);
+                    } else {
+                        // Valid spin - get consonant
+                        updateStatus(`You spun $${result.value}! Choose a consonant.`);
+                        showConsonantModal();
+                    }
+                }
+                
+                wheel.style.animation = '';
+            }, 2000);
+        }
+
+        function showConsonantModal() {
+            const consonants = 'BCDFGHJKLMNPQRSTVWXYZ';
+            const available = consonants.split('').filter(c => !gameState.previousGuesses.includes(c));
+            
+            const grid = document.getElementById('consonantGrid');
+            grid.innerHTML = '';
+            
+            available.forEach(consonant => {
+                const btn = document.createElement('button');
+                btn.className = 'letter-btn';
+                btn.textContent = consonant;
+                btn.onclick = () => guessConsonant(consonant);
+                grid.appendChild(btn);
+            });
+            
+            document.getElementById('consonantModal').style.display = 'block';
+        }
+
+        async function guessConsonant(consonant) {
+            closeModal('consonantModal');
+            
+            const result = await apiCall('guess_letter', {
+                guess: consonant,
+                dollar_value: gameState.wheelValue
+            });
+            
+            if (result.success) {
+                gameState.showing = result.showing;
+                gameState.winnings = result.winnings;
+                gameState.currentTurn = result.current_turn;
+                gameState.previousGuesses = result.previous_guesses;
+                
+                updateDisplay();
+                updateStatus(result.message);
+                
+                if (result.puzzle_solved) {
+                    endGame('You solved the puzzle!');
+                } else if (result.next_turn) {
+                    setTimeout(gameLoop, 2000);
+                } else {
+                    setTimeout(gameLoop, 1000);
+                }
+            }
+        }
+
+        function buyVowel() {
+            const vowels = 'AEIOU';
+            const available = vowels.split('').filter(v => !gameState.previousGuesses.includes(v));
+            
+            if (available.length === 0) {
+                alert('No vowels available!');
+                return;
+            }
+            
+            const grid = document.getElementById('vowelGrid');
+            grid.innerHTML = '';
+            
+            available.forEach(vowel => {
+                const btn = document.createElement('button');
+                btn.className = 'letter-btn';
+                btn.style.background = '#7c3aed';
+                btn.textContent = vowel;
+                btn.onclick = () => purchaseVowel(vowel);
+                grid.appendChild(btn);
+            });
+            
+            document.getElementById('vowelModal').style.display = 'block';
+        }
+
+        async function purchaseVowel(vowel) {
+            closeModal('vowelModal');
+            
+            const result = await apiCall('buy_vowel', {
+                vowel: vowel
+            });
+            
+            if (result.success) {
+                gameState.showing = result.showing;
+                gameState.winnings = result.winnings;
+                gameState.currentTurn = result.current_turn;
+                gameState.previousGuesses = result.previous_guesses;
+                
+                updateDisplay();
+                updateStatus(result.message);
+                
+                if (result.puzzle_solved) {
+                    endGame('You solved the puzzle!');
+                } else if (result.next_turn) {
+                    setTimeout(gameLoop, 2000);
+                } else {
+                    setTimeout(gameLoop, 1000);
+                }
+            } else {
+                alert(result.message);
+            }
+        }
+
+        function solvePuzzle() {
+            document.getElementById('solutionInput').value = '';
+            document.getElementById('solveModal').style.display = 'block';
+        }
+
+        async function submitSolution() {
+            const solution = document.getElementById('solutionInput').value;
+            closeModal('solveModal');
+            
+            const result = await apiCall('solve_puzzle', {
+                solution: solution
+            });
+            
+            if (result.success) {
+                if (result.correct) {
+                    gameState.showing = result.showing;
+                    updateDisplay();
+                    endGame('Correct! You solved the puzzle!');
+                } else {
+                    gameState.currentTurn = result.current_turn;
+                    updateDisplay();
+                    updateStatus(result.message);
+                    setTimeout(gameLoop, 2000);
+                }
+            }
+        }
+
+        function getHint() {
+            document.getElementById('hintModal').style.display = 'block';
+        }
+
+        async function requestHint(difficulty) {
+            closeModal('hintModal');
+            updateStatus(`Generating ${difficulty} hint...`);
+            
+            const result = await apiCall('get_hint', {
+                difficulty: difficulty
+            });
+            
+            if (result.success) {
+                alert(`💡 ${difficulty.charAt(0).toUpperCase() + difficulty.slice(1)} Hint:\n\n${result.hint}\n\nHints remaining: ${result.hints_remaining}`);
+                gameState.hintsRemaining = result.hints_remaining;
+                updateHumanControls();
+            } else {
+                alert('Could not generate hint: ' + result.hint);
+            }
+        }
+
+        function updateDisplay() {
+            // Update category
+            document.getElementById('category').textContent = `Category: ${gameState.clue}`;
+            
+            // Update puzzle board
+            updatePuzzleBoard();
+            
+            // Update players
+            updatePlayersDisplay();
+            
+            // Update guesses
+            const guessesList = gameState.previousGuesses.length > 0 ? 
+                gameState.previousGuesses.sort().join(' ') : 'None';
+            document.getElementById('guessesList').textContent = guessesList;
+            
+            // Update controls
+            updateHumanControls();
+        }
+
+        function updatePuzzleBoard() {
+            const board = document.getElementById('puzzleBoard');
+            board.innerHTML = '';
+            
+            if (!gameState.showing) return;
+            
+            const words = gameState.showing.split(' ');
+            
+            words.forEach(word => {
+                const wordDiv = document.createElement('div');
+                wordDiv.className = 'puzzle-word';
+                
+                for (let char of word) {
+                    const letterBox = document.createElement('div');
+                    letterBox.className = 'letter-box';
+                    
+                    if (char !== '_') {
+                        letterBox.textContent = char;
+                        letterBox.classList.add('revealed');
+                    }
+                    
+                    wordDiv.appendChild(letterBox);
+                }
+                
+                board.appendChild(wordDiv);
+            });
+        }
+
+        function updatePlayersDisplay() {
+            const container = document.getElementById('playersContainer');
+            const players = container.children;
+            
+            for (let i = 0; i < 3; i++) {
+                const player = players[i];
+                const scoreElement = player.querySelector('.player-score');
+                const turnElement = player.querySelector('.player-turn');
+                
+                scoreElement.textContent = `Score: $${gameState.winnings[i].toLocaleString()}`;
+                
+                if (i === gameState.currentTurn % 3 && gameState.isActive) {
+                    player.classList.add('active');
+                    turnElement.textContent = '👉 YOUR TURN';
+                } else {
+                    player.classList.remove('active');
+                    turnElement.textContent = '';
+                }
+            }
+        }
+
+        function updateHumanControls() {
+            const isHumanTurn = gameState.isActive && 
+                gameState.playerTypes[gameState.currentTurn % 3] === 'human';
+            
+            document.getElementById('spinBtn').disabled = !isHumanTurn;
+            document.getElementById('solveBtn').disabled = !isHumanTurn;
+            
+            // Buy vowel only if player has enough money
+            const canBuyVowel = isHumanTurn && gameState.winnings[gameState.currentTurn % 3] >= 250;
+            document.getElementById('buyVowelBtn').disabled = !canBuyVowel;
+            
+            // Hint button
+            const canGetHint = isHumanTurn && gameState.hintsRemaining > 0;
+            document.getElementById('hintBtn').disabled = !canGetHint;
+            
+            if (canGetHint) {
+                document.getElementById('hintBtn').textContent = `💡 Get Hint (${gameState.hintsRemaining} left)`;
+            }
+        }
+
+        function updateStatus(message) {
+            document.getElementById('statusBar').textContent = message;
+        }
+
+        function endGame(message) {
+            gameState.isActive = false;
+            updateHumanControls();
+            
+            const winnerIndex = gameState.winnings.indexOf(Math.max(...gameState.winnings));
+            const winnerScore = gameState.winnings[winnerIndex];
+            
+            let resultMessage = `${message}\n\n🏆 WINNER: Player ${winnerIndex + 1} with $${winnerScore.toLocaleString()}!\n\nFinal Scores:\n`;
+            
+            for (let i = 0; i < 3; i++) {
+                resultMessage += `Player ${i + 1}: $${gameState.winnings[i].toLocaleString()}\n`;
+            }
+            
+            alert(resultMessage);
+            updateStatus('Game ended. Click "New Game" to play again!');
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).style.display = 'none';
+        }
+
+        function setupPlayers() {
+            alert('Player setup feature coming soon! Currently: Human, Smart AI, Conservative AI');
+        }
+
+        // Close modals when clicking outside
+        window.onclick = function(event) {
+            const modals = document.querySelectorAll('.modal');
+            modals.forEach(modal => {
+                if (event.target === modal) {
+                    modal.style.display = 'none';
+                }
+            });
+        }
+
+        // Initialize display
+        updateDisplay();
+    </script>
+</body>
+</html>
