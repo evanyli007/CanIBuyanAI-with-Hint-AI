@@ -14,3 +14,11 @@ ENV/
 # OS files
 .DS_Store
 Thumbs.db
+
+# Environment variables and secrets
+.env
+.env.local
+.env.*.local
+
+# API keys (should be set as environment variables)
+*.key

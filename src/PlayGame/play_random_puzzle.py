@@ -4,6 +4,7 @@ import sys
 import time
 import ascii_wheel
 from smart_player import computer_turn_smart, computer_turn_smart_conservative, computer_turn_smart_aggressive
+from hint_ai import HintAI
 
 def computer_turn(showing, winnings, previous_guesses, turn):
   # Guess in the order of the alphabet
@@ -263,22 +264,53 @@ def get_random_puzzle():
         return(puzzle, clue, date, game_type)
       number = number + 1
 
-def human_turn(showing, winnings, previous_guesses, turn, puzzle):
+def human_turn(showing, winnings, previous_guesses, turn, puzzle, hint_ai=None, clue=""):
 
   # Make sure human chooses a valid action
   deciding = False
   while not deciding:
-    decision = input("1: Spin, 2: Buy Vowel, 3: Solve ....  ")
-    if decision == "1" or decision == "2" or decision == "3":
+    hint_option = ", 4: Get Hint" if hint_ai and hint_ai.get_hints_remaining() > 0 else ""
+    decision = input(f"1: Spin, 2: Buy Vowel, 3: Solve{hint_option} ....  ")
+    if decision == "1" or decision == "2" or decision == "3" or (decision == "4" and hint_ai and hint_ai.get_hints_remaining() > 0):
       deciding = True
       if decision == "2" and winnings[(turn % 3)] < 250: # Minimum cost of a vowel
-        print("Sorry .... you don't have enough money. Select 1 or 3")
+        print("Sorry .... you don't have enough money. Select 1, 2, or 3")
         deciding = False
     else:
-      print("Please choose 1, 2, or 3")
+      valid_options = "1, 2, or 3"
+      if hint_ai and hint_ai.get_hints_remaining() > 0:
+        valid_options += ", or 4"
+      print(f"Please choose {valid_options}")
 
   # Player decisions
-  if decision == "3":
+  if decision == "4":  # Get Hint
+    if hint_ai and hint_ai.get_hints_remaining() > 0:
+      print("\nChoose hint difficulty:")
+      print("1: Easy (more direct)")
+      print("2: Medium (crossword-style)")
+      print("3: Hard (cryptic)")
+      
+      difficulty_choice = input("Select difficulty (1-3): ")
+      difficulty_map = {"1": "easy", "2": "medium", "3": "hard"}
+      difficulty = difficulty_map.get(difficulty_choice, "medium")
+      
+      # Extract category from clue for better hints
+      category = clue if clue else "General"
+      
+      print(f"\nGenerating {difficulty} hint...")
+      hint_result = hint_ai.generate_hint(puzzle, category, difficulty, showing)
+      
+      print(f"\n🔍 HINT ({difficulty.upper()}): {hint_result['hint']}")
+      print(f"Hints remaining: {hint_result['hints_remaining']}")
+      print()
+      
+      # Return to turn without using it up
+      return human_turn(showing, winnings, previous_guesses, turn, puzzle, hint_ai, clue)
+    else:
+      print("No hints remaining!")
+      return human_turn(showing, winnings, previous_guesses, turn, puzzle, hint_ai, clue)
+      
+  elif decision == "3":
     deciding = True
     solve = input("Your guess to solve: ...... ").upper() # TODO: clean
     if solve == puzzle:
@@ -381,6 +413,13 @@ def play_random_game(type_of_players):
   print("Welcome to Wheel of Fortune")
   print("You are playing a game of type:", game_type)
   print("The clue is:", clue)
+  
+  # Initialize Hint AI for human players
+  hint_ai = None
+  if "human" in type_of_players:
+    hint_ai = HintAI()
+    print(f"🤖 Hint AI activated! You have {hint_ai.get_hints_remaining()} hints available.")
+    print("💡 Hints come in three difficulty levels: Easy, Medium, and Hard")
 
   # Mask out word
   showing = puzzle
@@ -406,7 +445,7 @@ def play_random_game(type_of_players):
     print("This player is:", type_of_player)
 
     if type_of_player == "human":
-      guess, dollar = human_turn(showing, winnings, previous_guesses, turn, puzzle)
+      guess, dollar = human_turn(showing, winnings, previous_guesses, turn, puzzle, hint_ai, clue)
     elif type_of_player == "morse":
       guess, dollar = computer_turn_morse(showing, winnings, previous_guesses, turn)
     elif type_of_player == "oxford":

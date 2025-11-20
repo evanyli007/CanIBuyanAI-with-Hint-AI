@@ -1,8 +1,20 @@
-# CanIBuyanAI
-This project tries to solve Wheel of Fortune puzzles.
+# CanIBuyanAI with Hint AI
+This project tries to solve Wheel of Fortune puzzles and now includes an AI-powered hint system!
+
+## 🆕 New Feature: Hint AI
+The game now includes an intelligent hint system that provides New York Times-style crossword hints to help players solve puzzles. Features include:
+- **AI-powered hints** using large language models (OpenAI GPT)
+- **Three difficulty levels**: Easy, Medium, and Hard
+- **Fallback system** with rule-based hints when API unavailable
+- **Limited hints per game** (3 hints) for balanced gameplay
+
+See [HINT_AI_README.md](./HINT_AI_README.md) for detailed documentation.
 
 ## Requirements
-Tested using Python 3.6.
+Tested using Python 3.6+. For the Hint AI feature:
+```bash
+pip install -r requirements.txt
+```
 
 ## Scraper
 See the [Puzzle Scraper README](./src/PuzzleScraper/README.md) for details.
@@ -19,6 +31,7 @@ Play a random Wheel of Fortune puzzle against simple computer strategies using [
 - As a human, you’ll be prompted each turn: 1 = Spin, 2 = Buy Vowel, 3 = Solve
 - Smart AI players (`smart`, `conservative`, `aggressive`) use advanced decision-making logic to optimize spin vs buy vowel choices
 - Run from the `src/PlayGame` directory so relative paths resolve (uses `../../data/puzzles/valid.csv` and `bigrams.txt`)
+- **NEW: Hint AI** - Human players can now use option 4 to get AI-generated crossword-style hints with three difficulty levels!
 
 Example:
 ```bash
